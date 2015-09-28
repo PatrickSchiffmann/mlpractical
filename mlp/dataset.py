@@ -127,6 +127,54 @@ class MNISTDataProvider(DataProvider):
             matrix[index, val] = 1
         return matrix
 
+class MetOfficeDataProvider(DataProvider):
+    """
+    The class iterates over weather for south of Scotland
+    dataset, in possibly random order.
+    """
+    def __init__(self,
+                 windowsize = 5,
+                 batch_size=10,
+                 max_num_examples=-1,
+                 randomize=True):
+
+        super(MetOfficeDataProvider, self).__init__(batch_size, randomize)
+
+        data = np.loadtxt("data/HadSSP_daily_qc.txt", skiprows=3, usecols=range(2, 32))
+        data = data[data != -99.99]
+        
+        self.x = np.empty((data.shape[0]-windowsize-1, windowsize))
+        for index in range(self.x.shape[0]):
+            self.x[index,:] = data[index:index+windowsize]
+
+        self.t = data[windowsize:]
+
+        self._max_num_examples = max_num_examples
+        self.batch_size = batch_size
+
+    def reset(self):
+        super(MetOfficeDataProvider, self).reset()
+
+    def next(self):
+        
+        has_enough = (self._curr_idx + self.batch_size) <= self.x.shape[0]
+        presented_max = (self._max_num_examples > 0 and
+                         self._curr_idx + self.batch_size > self._max_num_examples)
+
+        if not has_enough or presented_max:
+            raise StopIteration()
+        
+        range_idx = \
+            numpy.arange(self._curr_idx, self._curr_idx + self.batch_size)
+
+        rval_x = self.x[range_idx]
+        rval_t = self.t[range_idx]
+
+        self._curr_idx += self.batch_size
+
+        return rval_x, rval_t
+
+
 class FuncDataProvider(DataProvider):
     """
     Function gets as an argument a list of functions random samples
