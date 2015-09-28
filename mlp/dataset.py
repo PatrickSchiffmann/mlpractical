@@ -6,6 +6,7 @@ import cPickle
 import gzip
 import numpy
 import os
+import numpy as np
 
 
 class DataProvider(object):
@@ -117,12 +118,14 @@ class MNISTDataProvider(DataProvider):
 
         self._curr_idx += self.batch_size
 
-        #return rval_x, self.__to_one_of_k(rval_y)
-        return rval_x, rval_t
-
+        return rval_x, self.__to_one_of_k(rval_t)
+        
     def __to_one_of_k(self, y):
-        raise NotImplementedError('Write me!')
-
+        
+        matrix = np.zeros((y.shape[0], self.num_classes))
+        for index, val in enumerate(y):
+            matrix[index, val] = 1
+        return matrix
 
 class FuncDataProvider(DataProvider):
     """
